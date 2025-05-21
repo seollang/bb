@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 from transformers import pipeline
+import html
 
 # ✅ 뉴스 링크 + 썸네일 가져오기
 def get_news_links():
@@ -9,8 +10,9 @@ def get_news_links():
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # 뉴스 HTML 구조 확인
-    st.write(soup.prettify())  # HTML 구조를 확인해보세요.
+    # HTML 구조를 보기 전에 디코딩된 내용 출력
+    decoded_html = html.unescape(soup.prettify())  # &amp;와 같은 HTML 엔터티를 실제 문자로 디코딩
+    st.write(decoded_html)  # 디코딩된 HTML을 확인하기 위해 출력
 
     links = []
     for item in soup.select(".list_body li"):
@@ -35,12 +37,10 @@ def get_article_content(url):
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # 기사 HTML 구조 확인
+        # 본문 내용이 포함된 태그 확인
         st.write(soup.prettify())  # HTML 구조를 확인해보세요.
-
-        # 본문 추출 (웹사이트 구조에 맞게 수정 필요)
+        
         content = soup.find("div", {"id": "newsct_article"})  # 이 부분이 잘못되었을 수 있음
-        # 만약 위 코드가 안되면 다른 selector를 사용하세요.
 
         if content:
             return content.get_text(strip=True)

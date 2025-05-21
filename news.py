@@ -2,9 +2,8 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 from transformers import pipeline
-import torch
 
-# 뉴스 크롤링 함수 (예시: 네이버 뉴스 IT면)
+# ✅ 뉴스 목록 가져오기 (네이버 IT 뉴스)
 def get_news_links():
     url = "https://news.naver.com/main/list.naver?mode=LSD&mid=sec&sid1=105"
     response = requests.get(url)
@@ -14,13 +13,13 @@ def get_news_links():
     for a_tag in soup.select(".list_body a"):
         href = a_tag.get("href")
         title = a_tag.get_text(strip=True)
-        if href and title:
+        if href and title and href.startswith("https://"):
             links.append((title, href))
         if len(links) >= 5:
             break
     return links
 
-# 뉴스 본문 가져오기 함수
+# ✅ 뉴스 본문 가져오기
 def get_article_content(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
@@ -29,18 +28,17 @@ def get_article_content(url):
         return content.get_text(strip=True)
     return "본문을 불러올 수 없습니다."
 
-# 요약 모델 로딩
+# ✅ 요약 모델 로드 (Streamlit 캐시)
 @st.cache_resource
 def load_summarizer():
     return pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
 
 summarizer = load_summarizer()
 
-# Streamlit 앱 UI
+# ✅ Streamlit UI 구성
 st.title("📰 AI 뉴스 요약 웹앱")
 st.markdown("IT 뉴스를 요약해서 보여주는 인공지능 요약 앱입니다.")
 
-# 뉴스 리스트 불러오기
 news = get_news_links()
 
 for title, link in news:

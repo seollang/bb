@@ -1,5 +1,5 @@
-streamlit
-beautifulsoup4
-transformers
-requests
-torch
+streamlit==1.21.0
+selenium==4.10.0
+webdriver-manager==3.8.5
+transformers==4.30.0
+torch==2.1.0

@@ -17,6 +17,9 @@ def get_news_links():
         img_tag = item.find("img")
         img_url = img_tag["src"] if img_tag else None
 
+        # 디버깅 로그 추가
+        print(f"제목: {title}, 링크: {href}, 이미지: {img_url}")
+
         if href and title and href.startswith("https://"):
             links.append((title, href, img_url))
         if len(links) >= 5:
@@ -29,6 +32,9 @@ def get_article_content(url):
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "html.parser")
         content = soup.find("div", {"id": "newsct_article"})
+        # 디버깅 로그 추가
+        print(f"기사 URL: {url}, 본문 내용: {content}")
+
         if content:
             return content.get_text(strip=True)
         return "본문을 불러올 수 없습니다."
@@ -46,7 +52,11 @@ summarizer = load_summarizer()
 st.title("📰 AI 뉴스 요약 웹앱")
 st.markdown("최신 IT 뉴스를 인공지능이 자동으로 요약해줍니다.")
 
+# 뉴스 리스트 가져오기
 news_list = get_news_links()
+
+# 디버깅 로그
+print(f"뉴스 목록: {news_list}")
 
 for title, link, img_url in news_list:
     with st.container():

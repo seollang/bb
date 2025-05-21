@@ -25,12 +25,15 @@ def get_news_links():
 
 # ✅ 뉴스 본문 가져오기
 def get_article_content(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
-    content = soup.find("div", {"id": "newsct_article"})
-    if content:
-        return content.get_text(strip=True)
-    return "본문을 불러올 수 없습니다."
+    try:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, "html.parser")
+        content = soup.find("div", {"id": "newsct_article"})
+        if content:
+            return content.get_text(strip=True)
+        return "본문을 불러올 수 없습니다."
+    except Exception as e:
+        return f"기사 본문을 불러오는 중 오류 발생: {e}"
 
 # ✅ 요약 모델 캐싱
 @st.cache_resource
@@ -62,9 +65,10 @@ for title, link, img_url in news_list:
             st.markdown(f"### {title}")
             st.markdown(f'[🔗 원문 보러가기]({link}){{:target="_blank"}}', unsafe_allow_html=True)
 
+            # 기사 내용 출력
             article = get_article_content(link)
             st.markdown("##### 📄 기사 일부:")
-            st.write(article[:1000] + ("..." if len(article) > 1000 else ""))
+            st.write(article[:1000] + ("..." if len(article) > 1000 else ""))  # 1000자까지만 출력
 
             if st.button(f"✂ 요약 보기: {title}"):
                 cleaned = article.strip().replace('\n', ' ')

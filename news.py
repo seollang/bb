@@ -1,74 +1,73 @@
 import streamlit as st
-import requests
-from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
 from transformers import pipeline
-import html
 
-# ✅ 뉴스 링크 + 썸네일 가져오기
+# Selenium 설정
+def get_selenium_driver():
+    options = Options()
+    options.headless = True  # 브라우저 창을 띄우지 않음
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    return driver
+
+# 뉴스 제목 및 링크 가져오기
 def get_news_links():
     url = "https://news.naver.com/main/list.naver?mode=LSD&mid=sec&sid1=105"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
+    driver = get_selenium_driver()
+    driver.get(url)
 
-    # HTML 구조를 보기 전에 디코딩된 내용 출력
-    decoded_html = html.unescape(soup.prettify())  # &amp;와 같은 HTML 엔터티를 실제 문자로 디코딩
-    st.write(decoded_html)  # 디코딩된 HTML을 확인하기 위해 출력
+    # 페이지가 완전히 로드될 때까지 기다림
+    driver.implicitly_wait(10)
 
     links = []
-    for item in soup.select(".list_body li"):
-        a_tag = item.find("a")
-        title = a_tag.get_text(strip=True)
-        href = a_tag.get("href")
-        img_tag = item.find("img")
-        img_url = img_tag["src"] if img_tag else None
-
-        # 디버깅 로그
-        print(f"제목: {title}, 링크: {href}, 이미지: {img_url}")
-
-        if href and title and href.startswith("https://"):
-            links.append((title, href, img_url))
+    articles = driver.find_elements(By.CSS_SELECTOR, ".list_body li")
+    
+    for article in articles:
+        title_tag = article.find_element(By.CSS_SELECTOR, "a")
+        title = title_tag.text
+        link = title_tag.get_attribute("href")
+        img_tag = article.find_element(By.CSS_SELECTOR, "img")
+        img_url = img_tag.get_attribute("src") if img_tag else None
+        if link and title:
+            links.append((title, link, img_url))
         if len(links) >= 5:
             break
+    
+    driver.quit()
     return links
 
-# ✅ 뉴스 본문 가져오기
+# 뉴스 본문 가져오기
 def get_article_content(url):
+    driver = get_selenium_driver()
+    driver.get(url)
+    driver.implicitly_wait(10)
+    
+    # 본문을 포함하는 태그를 찾기 (예시로 ID나 class 사용)
     try:
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, "html.parser")
-
-        # HTML 구조를 디버깅
-        st.write(soup.prettify())  # HTML 구조 확인을 위해 출력
-
-        # 본문을 포함하는 다른 태그로 바꿔봅니다.
-        content = soup.find("div", {"class": "article_body"})  # 여기에서 "article_body"가 본문을 담고 있는 클래스일 가능성 있음
-        if not content:
-            content = soup.find("div", {"id": "articleBodyContents"})  # 다른 클래스명 시도
-        if not content:
-            content = soup.find("div", {"class": "news_body"})  # 또 다른 클래스명 시도
-
-        if content:
-            return content.get_text(strip=True)
-        return "본문을 불러올 수 없습니다."
+        content = driver.find_element(By.CSS_SELECTOR, "#articleBodyContents")  # 네이버 뉴스 기사 본문 ID
+        article_text = content.text
     except Exception as e:
-        return f"기사 본문을 불러오는 중 오류 발생: {e}"
+        article_text = f"본문을 불러오는 중 오류 발생: {e}"
 
-# ✅ 요약 모델 캐싱
+    driver.quit()
+    return article_text
+
+# 요약 모델
 @st.cache_resource
 def load_summarizer():
     return pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
 
 summarizer = load_summarizer()
 
-# ✅ Streamlit UI
+# Streamlit UI
 st.title("📰 AI 뉴스 요약 웹앱")
 st.markdown("최신 IT 뉴스를 인공지능이 자동으로 요약해줍니다.")
 
 # 뉴스 목록 가져오기
 news_list = get_news_links()
-
-# 디버깅 로그
-print(f"뉴스 목록: {news_list}")
 
 for title, link, img_url in news_list:
     with st.container():

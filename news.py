@@ -9,6 +9,9 @@ def get_news_links():
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
 
+    # 뉴스 HTML 구조 확인
+    st.write(soup.prettify())  # HTML 구조를 확인해보세요.
+
     links = []
     for item in soup.select(".list_body li"):
         a_tag = item.find("a")
@@ -17,7 +20,7 @@ def get_news_links():
         img_tag = item.find("img")
         img_url = img_tag["src"] if img_tag else None
 
-        # 디버깅 로그 추가
+        # 디버깅 로그
         print(f"제목: {title}, 링크: {href}, 이미지: {img_url}")
 
         if href and title and href.startswith("https://"):
@@ -31,9 +34,13 @@ def get_article_content(url):
     try:
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "html.parser")
-        content = soup.find("div", {"id": "newsct_article"})
-        # 디버깅 로그 추가
-        print(f"기사 URL: {url}, 본문 내용: {content}")
+
+        # 기사 HTML 구조 확인
+        st.write(soup.prettify())  # HTML 구조를 확인해보세요.
+
+        # 본문 추출 (웹사이트 구조에 맞게 수정 필요)
+        content = soup.find("div", {"id": "newsct_article"})  # 이 부분이 잘못되었을 수 있음
+        # 만약 위 코드가 안되면 다른 selector를 사용하세요.
 
         if content:
             return content.get_text(strip=True)
@@ -52,7 +59,7 @@ summarizer = load_summarizer()
 st.title("📰 AI 뉴스 요약 웹앱")
 st.markdown("최신 IT 뉴스를 인공지능이 자동으로 요약해줍니다.")
 
-# 뉴스 리스트 가져오기
+# 뉴스 목록 가져오기
 news_list = get_news_links()
 
 # 디버깅 로그

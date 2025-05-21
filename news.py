@@ -37,10 +37,15 @@ def get_article_content(url):
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # 본문 내용이 포함된 태그 확인
-        st.write(soup.prettify())  # HTML 구조를 확인해보세요.
-        
-        content = soup.find("div", {"id": "newsct_article"})  # 이 부분이 잘못되었을 수 있음
+        # HTML 구조를 디버깅
+        st.write(soup.prettify())  # HTML 구조 확인을 위해 출력
+
+        # 본문을 포함하는 다른 태그로 바꿔봅니다.
+        content = soup.find("div", {"class": "article_body"})  # 여기에서 "article_body"가 본문을 담고 있는 클래스일 가능성 있음
+        if not content:
+            content = soup.find("div", {"id": "articleBodyContents"})  # 다른 클래스명 시도
+        if not content:
+            content = soup.find("div", {"class": "news_body"})  # 또 다른 클래스명 시도
 
         if content:
             return content.get_text(strip=True)

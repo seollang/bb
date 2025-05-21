@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 from transformers import pipeline
+import torch
 
 # 뉴스 크롤링 함수 (예시: 네이버 뉴스 IT면)
 def get_news_links():
@@ -31,7 +32,7 @@ def get_article_content(url):
 # 요약 모델 로딩
 @st.cache_resource
 def load_summarizer():
-    return pipeline("summarization")
+    return pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
 
 summarizer = load_summarizer()
 
